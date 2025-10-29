@@ -1,6 +1,5 @@
-// app/layout.tsx
 import React from 'react';
-import AntdRegistry from './AntdRegistry'; // 1. 방금 만든 레지스트리 import
+import AntdRegistry from './AntdRegistry';
 import './globals.css';
 
 export default function RootLayout({
@@ -11,7 +10,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AntdRegistry>{children}</AntdRegistry> {/* 2. <children>을 감싸기 */}
+        <AntdRegistry>
+          {children}
+        </AntdRegistry>
       </body>
     </html>
   );
