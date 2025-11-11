@@ -1,0 +1,560 @@
+openapi: 3.0.4
+info:
+  title: AGIT Prompt-LMS for Startups API
+  description: |-
+    Complete API specification for AGIT P-LMS including:
+    - Multi-tenancy (Workspace/Space/Team)
+    - Task Management (Guide/Prompt/Output)
+    - PIQ (Prompt Intelligence Quotient) System
+    - Adaptive Prompt Generation
+    - Role-based Collaboration Tracking
+    - Real-time Feedback System
+  version: 1.0.0
+tags:
+  - name: workspaces
+    description: Workspace management (top-level tenancy)
+  - name: courses
+    description: Course/Project space management
+  - name: teams
+    description: Team management within spaces
+  - name: modules
+    description: Module organization
+  - name: tasks
+    description: Task management (Guide/Prompt/Output)
+  - name: team-modules
+  - name: team-tasks
+  - name: users
+    description: Operations about user
+paths:
+  "/workspaces":
+    post:
+      summary: Add a new workspace
+      description: |
+        워크스페이스를 생성한다.
+        워크스페이스를 만든 사람을 workspace member에 소유자로 추가한다.
+      tags:
+        - workspaces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                created_by:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  created_by:
+                    type: string
+  "/workspaces/{id}":
+    get:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required : true
+          description: An ID of the workspace
+      tags:
+        - workspaces
+      responses:
+        '200':
+          description: A single workspace.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+  "/workspace/{workspace_id}/members":
+    post:
+      summary: Add a new workspace member
+      tags:
+        - workspaces
+      parameters:
+        - in: path
+          name: workspace_id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - member
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceMember'
+  "/workspaces/{id}/courses":
+    get:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: An ID of the workspace
+      tags:
+        - courses
+      responses:
+        '200':
+          description: A list of courses of the workspace.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    start_date:
+                      type: string
+                      format: date-time
+                    end_date:
+                      type: string
+                      format: date-time
+                    location:
+                      type: string
+                    progress-percent:
+                      type: integer
+                    total-learners:
+                      type: integer
+                    owner:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        profile:
+                          type: string
+    post:
+      summary: Create a new course
+      description: |
+        스페이스에 새로운 코스를 생성한다.
+        코스를 만든 사람이 소유자로 등록된다.
+      tags:
+        - courses
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: An ID of the workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                  nullable: true
+                startDate:
+                  type: string
+                  format: date-time
+                  nullable: true
+                endDate:
+                  type: string
+                  format: date-time
+                  nullable: true
+                location:
+                  type: string
+      responses:
+        '201':
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+  "/courses/{course_id}/members":
+    post:
+      summary: Add a new member to the course
+      tags:
+        - courses
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: string
+          required: true
+          description: An ID of the course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        '201':
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseMember'
+  "/courses/{course_id}/modules":
+    get:
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: string
+          required: true
+          description: An ID of the course
+      tags:
+        - modules
+      responses:
+        '200':
+          description: A list of modules of the course.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
+    post:
+      summary: Create a new module
+      tags:
+        - modules
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: string
+          required: true
+          description: An ID of the course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                objective:
+                  type: string
+                summary:
+                  type: string
+      responses:
+        '201':
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
+  "/courses/{course_id}/teams":
+    get:
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: string
+          required: true
+          description: An ID of the course
+      tags:
+        - teams
+      responses:
+        '200':
+          description: A list of teams of the course.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+    post:
+      summary: Create a new team
+      tags:
+        - teams
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: string
+          required: true
+          description: An ID of the course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+  "/courses/{course_id}/teams/{team_id}/team_modules":
+    post:
+      summary: deploy a module instance and task instances to the team
+      description: |
+        module 템플릿을 기반으로 특정 team에 module 인스턴스를 생성합니다.
+        기본적으로 모든 task 템플릿도 함께 인스턴스화됩니다.
+      tags:
+        - team-modules
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: string
+          required: true
+          description: An ID of the course
+        - in: path
+          name: team_id
+          schema:
+            type: string
+          required: true
+          description: An ID of the team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                module_id:
+                  type: string
+                name:
+                  type: string
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: module 배포 성공
+          headers:
+            Location:
+              schema:
+                type: string
+              description: 생성된 module 인스턴스 URI
+              example: /courses/course_123/teams/team_a/team_modules/team_module_x
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  start_date:
+                    type: string
+                  end_date:
+                    type: string
+                  tasks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+components:
+  schemas:
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: objectid
+          example: 1234objectId
+          readOnly: true
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+    WorkspaceMember:
+      type: object
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        userId:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        owner:
+          type: object
+          properties:
+            name:
+              type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        totalLearner:
+          type: integer
+        progressPercent:
+          type: integer
+        background:
+          type: object
+          properties:
+            type:
+              type: string
+            value:
+              type: string
+        archived:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    CourseMember:
+      type: object
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        userId:
+          type: string
+        courseId:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+            - owner
+        createdAt:
+          type: string
+          format: date-time
+    Module:
+      type: object
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        courseId:
+          type: string
+        title:
+          type: string
+        objective:
+          type: string
+          description:
+            결과물을 상세하게 묘사한 글
+        order:
+          type: integer
+          description:
+            a order in modules of the course
+        summary:
+          type: string
+        version:
+          type: string
+          example: 1.0.0
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        courseId:
+          type: string
+        moduleId:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+        workspaceId:
+          type: string
+        courseId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: string
+    TeamModule:
+      type: object
+      properties:
+        id:
+          type: string
+    TeamTask:
+      type: object
+      properties:
+        id:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        fullname:
+          type: string
+        nickname:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          example: '12345'
+          pattern: '^\d{3}-\d{2}-\d{4}$'
+          writeOnly: true
